@@ -10,6 +10,13 @@ const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
 
+const moduleSyntaxCheckScript = `
+  import fs from 'node:fs';
+
+  const source = fs.readFileSync(process.argv[1], 'utf-8');
+  await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
+`;
+
 /**
  * Check JavaScript syntax validity by attempting to import the ES module
  */
@@ -23,9 +30,7 @@ function checkJsSyntax(filePath, fileName) {
       [
         "--input-type=module",
         "-e",
-        "import fs from 'node:fs';" +
-          "const source = fs.readFileSync(process.argv[1], 'utf-8');" +
-          "await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));",
+        moduleSyntaxCheckScript,
         filePath,
       ],
       {
