@@ -17,8 +17,20 @@ function checkJsSyntax(filePath, fileName) {
   console.log(`Checking ${fileName} for valid JavaScript syntax...`);
 
   try {
-    // Try to import the module - this will catch syntax errors
-    execSync(`node --input-type=module -e "import '${filePath}'"`, {
+    const command = [
+      "node",
+      "--input-type=module",
+      "-e",
+      JSON.stringify(
+        "import fs from 'node:fs';" +
+          "const source = fs.readFileSync(process.argv[1], 'utf-8');" +
+          "await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));"
+      ),
+      JSON.stringify(filePath),
+    ].join(" ");
+
+    // Parse the file contents as an ES module - this will catch syntax errors
+    execSync(command, {
       encoding: "utf-8",
       stdio: "pipe",
     });
