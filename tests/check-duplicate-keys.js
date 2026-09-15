@@ -8,7 +8,14 @@
 
 const fs = require("fs");
 const path = require("path");
-const { execSync } = require("child_process");
+const { execFileSync } = require("child_process");
+
+const moduleSyntaxCheckScript = `
+  import fs from 'node:fs';
+
+  const source = fs.readFileSync(process.argv[1], 'utf-8');
+  await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
+`;
 
 /**
  * Check JavaScript syntax validity by attempting to import the ES module
@@ -17,11 +24,20 @@ function checkJsSyntax(filePath, fileName) {
   console.log(`Checking ${fileName} for valid JavaScript syntax...`);
 
   try {
-    // Try to import the module - this will catch syntax errors
-    execSync(`node --input-type=module -e "import '${filePath}'"`, {
-      encoding: "utf-8",
-      stdio: "pipe",
-    });
+    // Parse the file contents as an ES module - this will catch syntax errors
+    execFileSync(
+      "node",
+      [
+        "--input-type=module",
+        "-e",
+        moduleSyntaxCheckScript,
+        filePath,
+      ],
+      {
+        encoding: "utf-8",
+        stdio: "pipe",
+      }
+    );
     console.log(`✓ ${fileName} has valid JavaScript syntax`);
   } catch (error) {
     const errorOutput = error.stderr || error.stdout || error.message;
