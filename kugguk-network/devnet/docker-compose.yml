@@ -1,0 +1,49 @@
+# 4-validator Besu QBFT network (chain ID 2026110). Run ./generate.sh first.
+# Only node1 exposes RPC, and only on localhost — put TLS/rate-limiting in front for public use.
+x-besu: &besu
+  image: ${BESU_IMAGE:-hyperledger/besu:latest}
+  restart: unless-stopped
+  volumes:
+    - ./genesis.json:/config/genesis.json:ro
+
+x-cmd: &cmd >-
+  --bootnodes=${BOOTNODE}
+  --genesis-file=/config/genesis.json
+  --data-path=/data
+  --node-private-key-file=/data/key
+  --min-gas-price=0
+  --p2p-port=30303
+  --rpc-http-enabled
+  --rpc-http-host=0.0.0.0
+  --rpc-http-api=ETH,NET,QBFT,WEB3
+  --host-allowlist=*
+  --rpc-http-cors-origins=*
+  --sync-min-peers=1
+
+services:
+  node1:
+    <<: *besu
+    command: *cmd
+    volumes: [./genesis.json:/config/genesis.json:ro, ./nodes/node1/data:/data]
+    ports: ["127.0.0.1:8545:8545"]
+    networks: { qbft: { ipv4_address: 172.28.0.11 } }
+  node2:
+    <<: *besu
+    command: *cmd
+    volumes: [./genesis.json:/config/genesis.json:ro, ./nodes/node2/data:/data]
+    networks: { qbft: { ipv4_address: 172.28.0.12 } }
+  node3:
+    <<: *besu
+    command: *cmd
+    volumes: [./genesis.json:/config/genesis.json:ro, ./nodes/node3/data:/data]
+    networks: { qbft: { ipv4_address: 172.28.0.13 } }
+  node4:
+    <<: *besu
+    command: *cmd
+    volumes: [./genesis.json:/config/genesis.json:ro, ./nodes/node4/data:/data]
+    networks: { qbft: { ipv4_address: 172.28.0.14 } }
+
+networks:
+  qbft:
+    ipam:
+      config: [{ subnet: 172.28.0.0/24 }]
